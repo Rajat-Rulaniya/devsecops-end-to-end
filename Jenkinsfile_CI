@@ -1,0 +1,76 @@
+pipeline {
+  agent any
+
+  tools {
+    nodejs 'nodejs23'
+  }
+
+  environment {
+    SCANNER_HOME = tool 'sonar-scanner'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scmGit(
+          branches: [[name: '*/main']],
+          extensions: [],
+          userRemoteConfigs: [
+            [url: 'https://github.com/Rajat-Rulaniya/devsecops-end-to-end.git']
+          ]
+        )
+      }
+    }
+
+    stage('Frontend Syntax Validation') {
+      steps {
+        dir('client') {
+          sh 'find . -name "*.js" -exec node --check {} +'
+        }
+      }
+    }
+
+    stage('Backend Syntax Validation') {
+      steps {
+        dir('api') {
+          sh 'find . -name "*.js" -exec node --check {} +'
+        }
+      }
+    }
+
+    stage('GitLeaks Scan') {
+      steps {
+        script {
+          sh 'gitleaks detect -v --source ./client --exit-code 1'
+          sh 'gitleaks detect -v --source ./api --exit-code 1'
+        }
+      }
+    }
+
+    stage('SonarQube Analysis') {
+      steps {
+        withSonarQubeEnv('sonar-server') {
+          sh '''
+            $SCANNER_HOME/bin/sonar-scanner \
+            -Dsonar.projectName=NodeJS-Project \
+            -Dsonar.projectKey=NodeJS-Project
+          '''
+        }
+      }
+    }
+
+    stage('Quality Gate Check') {
+      steps {
+        timeout(time: 1, unit: 'HOURS') {
+          waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token'
+        }
+      }
+    }
+
+    stage('Trivy FS Scan') {
+      steps {
+        sh 'trivy fs --format table -o fs-report.html .'
+      }
+    }
+  }
+}

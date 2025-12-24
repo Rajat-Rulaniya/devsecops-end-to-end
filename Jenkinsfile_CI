@@ -7,6 +7,9 @@ pipeline {
 
   environment {
     SCANNER_HOME = tool 'sonar-scanner'
+    DOCKER_USERNAME = 'rajatrulaniya'
+    DOCKER_BACKEND_REPO = 'devsecops-backend'
+    DOCKER_FRONTEND_REPO = 'devsecops-frontend'
   }
 
   stages {
@@ -69,10 +72,55 @@ pipeline {
 
     stage('Trivy FS Scan') {
       steps {
-        sh 'trivy fs --format table -o fs-report.html .'
+        sh '''
+          curl -sSL \
+            https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/html.tpl \
+            -o /tmp/trivy-html.tpl
+
+          trivy fs \
+            --format template \
+            --template "@/tmp/trivy-html.tpl" \
+            -o fs-report.html .
+        '''
+
+        archiveArtifacts artifacts: 'fs-report.html', followSymlinks: false
       }
     }
 
+    stage('Build-Tag & Push Backend Docker Image') {
+      steps {
+        withDockerRegistry(credentialsId: 'docker-creds') {
+          dir('api') {
+            sh """
+              docker build \
+                -t ${DOCKER_USERNAME}/${DOCKER_BACKEND_REPO}:v1-build-${env.BUILD_NUMBER} \
+                -t ${DOCKER_USERNAME}/${DOCKER_BACKEND_REPO}:latest \
+                .
+              
+              docker push ${DOCKER_USERNAME}/${DOCKER_BACKEND_REPO}:v1-build-${env.BUILD_NUMBER}
+              docker push ${DOCKER_USERNAME}/${DOCKER_BACKEND_REPO}:latest
+            """
+          }
+        }
+      }
+    }
 
+    stage('Build-Tag & Push Frontend Docker Image') {
+      steps {
+        withDockerRegistry(credentialsId: 'docker-creds') {
+          dir('client') {
+            sh """
+              docker build \
+                -t ${DOCKER_USERNAME}/${DOCKER_FRONTEND_REPO}:v1-build-${env.BUILD_NUMBER} \
+                -t ${DOCKER_USERNAME}/${DOCKER_FRONTEND_REPO}:latest \
+                .
+              
+              docker push ${DOCKER_USERNAME}/${DOCKER_FRONTEND_REPO}:v1-build-${env.BUILD_NUMBER}
+              docker push ${DOCKER_USERNAME}/${DOCKER_FRONTEND_REPO}:latest
+            """
+          }
+        }
+      }
+    }
   }
 }

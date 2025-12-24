@@ -13,7 +13,7 @@ pipeline {
     stage('Checkout') {
       steps {
         checkout scmGit(
-          branches: [[name: '*/main']],
+          branches: [[name: '*/dev']],
           extensions: [],
           userRemoteConfigs: [
             [url: 'https://github.com/Rajat-Rulaniya/devsecops-end-to-end.git']
@@ -72,5 +72,7 @@ pipeline {
         sh 'trivy fs --format table -o fs-report.html .'
       }
     }
+
+
   }
 }

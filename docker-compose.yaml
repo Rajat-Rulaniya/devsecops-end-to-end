@@ -18,7 +18,7 @@ services:
 
   backend:
     image: rajatrulaniya/devsecops-backend:latest
-    container_name: backend-api`
+    container_name: backend-api
     
     environment:
       DB_HOST: mysql

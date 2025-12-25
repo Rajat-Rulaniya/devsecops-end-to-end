@@ -10,4 +10,4 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["node", "dist/app.js"]
+CMD ["node", "app.js"]

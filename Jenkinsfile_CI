@@ -56,7 +56,8 @@ pipeline {
           sh '''
             $SCANNER_HOME/bin/sonar-scanner \
             -Dsonar.projectName=NodeJS-Project \
-            -Dsonar.projectKey=NodeJS-Project
+            -Dsonar.projectKey=NodeJS-Project \
+            -Dsonar.exclusions=**/trivy-*.html
           '''
         }
       }
@@ -80,26 +81,32 @@ pipeline {
           trivy fs \
             --format template \
             --template "@/tmp/trivy-html.tpl" \
-            -o fs-report.html .
+            -o trivy-fs-report.html .
         '''
 
-        archiveArtifacts artifacts: 'fs-report.html', followSymlinks: false
+        archiveArtifacts artifacts: 'trivy-fs-report.html', followSymlinks: false
       }
     }
 
     stage('Build-Tag & Push Backend Docker Image') {
       steps {
-        withDockerRegistry(credentialsId: 'docker-creds') {
+        withDockerRegistry(url: 'https://index.docker.io/v1/', credentialsId: 'docker-creds') {
           dir('api') {
             sh """
               docker build \
                 -t ${DOCKER_USERNAME}/${DOCKER_BACKEND_REPO}:v1-build-${env.BUILD_NUMBER} \
                 -t ${DOCKER_USERNAME}/${DOCKER_BACKEND_REPO}:latest \
                 .
+
+              trivy image --format template --template "@/tmp/trivy-html.tpl" \
+                ${DOCKER_USERNAME}/${DOCKER_BACKEND_REPO}:v1-build-${env.BUILD_NUMBER} \
+                -o trivy-backend-image-report.html
               
               docker push ${DOCKER_USERNAME}/${DOCKER_BACKEND_REPO}:v1-build-${env.BUILD_NUMBER}
               docker push ${DOCKER_USERNAME}/${DOCKER_BACKEND_REPO}:latest
             """
+
+            archiveArtifacts artifacts: 'trivy-backend-image-report.html', followSymlinks: false
           }
         }
       }
@@ -107,17 +114,23 @@ pipeline {
 
     stage('Build-Tag & Push Frontend Docker Image') {
       steps {
-        withDockerRegistry(credentialsId: 'docker-creds') {
+        withDockerRegistry(url: 'https://index.docker.io/v1/', credentialsId: 'docker-creds') {
           dir('client') {
             sh """
               docker build \
                 -t ${DOCKER_USERNAME}/${DOCKER_FRONTEND_REPO}:v1-build-${env.BUILD_NUMBER} \
                 -t ${DOCKER_USERNAME}/${DOCKER_FRONTEND_REPO}:latest \
                 .
+
+              trivy image --format template --template "@/tmp/trivy-html.tpl" \
+                ${DOCKER_USERNAME}/${DOCKER_FRONTEND_REPO}:v1-build-${env.BUILD_NUMBER} \
+                -o trivy-frontend-image-report.html
               
               docker push ${DOCKER_USERNAME}/${DOCKER_FRONTEND_REPO}:v1-build-${env.BUILD_NUMBER}
               docker push ${DOCKER_USERNAME}/${DOCKER_FRONTEND_REPO}:latest
             """
+
+            archiveArtifacts artifacts: 'trivy-frontend-image-report.html', followSymlinks: false
           }
         }
       }

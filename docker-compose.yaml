@@ -19,7 +19,7 @@ services:
       
 
   backend:
-    build: ./api
+    image: rajatrulaniya/devsecops-backend:latest
     container_name: backend-api
     
     environment:
@@ -39,7 +39,7 @@ services:
 
 
   frontend:
-    build: ./client
+    image: rajatrulaniya/devsecops-frontend:latest
     container_name: frontend-client
     
     depends_on: 

@@ -53,3 +53,6 @@ coverage/
 # Misc
 .eslintcache
 .npm
+.terraform
+
+*tfstate*

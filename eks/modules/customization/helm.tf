@@ -52,8 +52,25 @@ resource "helm_release" "nginx_ingress_controller" {
   repository = "https://kubernetes.github.io/ingress-nginx"
   chart = "ingress-nginx"
   namespace = "ingress-nginx"
+  
   create_namespace = true
 
   wait = false
-  timeout = 600
+  timeout = 300
+}
+
+resource "helm_release" "cert_manager" {
+  name = "cert-manager"
+  chart = "oci://quay.io/jetstack/charts/cert-manager"
+  namespace = "cert-manager"
+
+  create_namespace = true
+
+  wait = false
+  timeout = 300
+
+  set = [ {
+    name = "crds.enabled"
+    value = true
+  } ]
 }

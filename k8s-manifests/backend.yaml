@@ -19,9 +19,9 @@ metadata:
   labels:
     app: backend
 data:
-  DB_HOST: localhost
+  DB_HOST: mysql
   DB_USER: root
-  DB_NAME: crud_apps
+  DB_NAME: crud_app
   RESET_ADMIN_PASS: "true"
 
 ---
@@ -61,13 +61,13 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: backend-config
-                  key: DB_HOST
+                  key: DB_USER
 
             - name: DB_NAME
               valueFrom:
                 configMapKeyRef:
                   name: backend-config
-                  key: DB_HOST
+                  key: DB_NAME
 
             - name: DB_PASSWORD
               valueFrom:

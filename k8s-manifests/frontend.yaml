@@ -3,10 +3,10 @@ kind: Deployment
 
 metadata:
   name: frontend-deployment
-  namespace: dev
+  namespace: prod
 
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: frontend
@@ -35,9 +35,9 @@ kind: Service
 
 metadata:
   name: frontend
-  namespace: dev
+  namespace: prod
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: frontend
   ports:

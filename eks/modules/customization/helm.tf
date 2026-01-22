@@ -7,24 +7,24 @@ resource "helm_release" "elb_controller" {
 
   set = [
     {
-    name = "clusterName"
-    value = var.cluster_name
-    }, 
+      name  = "clusterName"
+      value = var.cluster_name
+    },
     {
-      name = "serviceAccount.create"
+      name  = "serviceAccount.create"
       value = false
     },
     {
-      name = "serviceAccount.name"
+      name  = "serviceAccount.name"
       value = kubernetes_service_account_v1.elb.metadata[0].name
     },
     {
-      name = "vpcId"
+      name  = "vpcId"
       value = var.vpcId
     }
   ]
 
-  depends_on = [ kubernetes_service_account_v1.elb ]
+  depends_on = [kubernetes_service_account_v1.elb]
 }
 
 resource "helm_release" "csi_driver" {
@@ -35,42 +35,49 @@ resource "helm_release" "csi_driver" {
 
   set = [
     {
-    name = "controller.serviceAccount.create"
-    value = false
-    }, 
+      name  = "controller.serviceAccount.create"
+      value = false
+    },
     {
-      name = "controller.serviceAccount.name"
+      name  = "controller.serviceAccount.name"
       value = kubernetes_service_account_v1.csi.metadata[0].name
     }
   ]
 
-  depends_on = [ kubernetes_service_account_v1.csi ]
+  depends_on = [kubernetes_service_account_v1.csi]
 }
 
 resource "helm_release" "nginx_ingress_controller" {
-  name = "nginx-ingress-controller"
+  name       = "nginx-ingress-controller"
   repository = "https://kubernetes.github.io/ingress-nginx"
-  chart = "ingress-nginx"
-  namespace = "ingress-nginx"
-  
+  chart      = "ingress-nginx"
+  namespace  = "ingress-nginx"
+
   create_namespace = true
 
-  wait = false
+  wait    = false
   timeout = 300
+
+  set = [
+    {
+      name  = "controller.service.annotations.service\\.beta\\.kubernetes\\.io/aws-load-balancer-scheme"
+      value = "internet-facing"
+    }
+  ]
 }
 
 resource "helm_release" "cert_manager" {
-  name = "cert-manager"
-  chart = "oci://quay.io/jetstack/charts/cert-manager"
+  name      = "cert-manager"
+  chart     = "oci://quay.io/jetstack/charts/cert-manager"
   namespace = "cert-manager"
 
   create_namespace = true
 
-  wait = false
+  wait    = false
   timeout = 300
 
-  set = [ {
-    name = "crds.enabled"
+  set = [{
+    name  = "crds.enabled"
     value = true
-  } ]
+  }]
 }

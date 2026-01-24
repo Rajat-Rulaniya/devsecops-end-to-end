@@ -64,6 +64,8 @@ resource "helm_release" "nginx_ingress_controller" {
       value = "internet-facing"
     }
   ]
+
+  depends_on = [ helm_release.elb_controller ]
 }
 
 resource "helm_release" "cert_manager" {
@@ -80,4 +82,16 @@ resource "helm_release" "cert_manager" {
     name  = "crds.enabled"
     value = true
   }]
+}
+
+resource "helm_release" "argo_cd" {
+  name = "argo-cd"
+  repository = "https://argoproj.github.io/argo-helm" 
+  chart = "argo-cd"
+  namespace = "argocd"
+
+  create_namespace = true
+
+  wait    = false
+  timeout = 300
 }

@@ -137,6 +137,32 @@ pipeline {
         }
       }
     }
+
+    stage('Update K8s Manifest Image Tag') {
+      steps {
+        sshagent(credentials: ['gitops-ssh']) {
+          sh """
+            rm -rf k8s-gitops-manifests
+            git clone git@github.com:Rajat-Rulaniya/k8s-gitops-manifests.git
+            cd k8s-gitops-manifests/devsecops-project
+
+            sed -i "s|image: ${DOCKER_USERNAME}/${DOCKER_BACKEND_REPO}:.*|image: ${DOCKER_USERNAME}/${DOCKER_BACKEND_REPO}:v1-build-${env.BUILD_NUMBER}|" backend.yaml
+
+            sed -i "s|image: ${DOCKER_USERNAME}/${DOCKER_FRONTEND_REPO}:.*|image: ${DOCKER_USERNAME}/${DOCKER_FRONTEND_REPO}:v1-build-${env.BUILD_NUMBER}|" frontend.yaml
+
+            git config user.name "jenkins-ci"
+            git config user.email "jenkins@ci.local"
+
+            git add .
+            git commit -m "ci: update user-management frontend and backend image tag to ${env.BUILD_NUMBER}" || {
+              echo "nothing to commit"
+              exit 0
+            }
+            git push origin main
+          """
+        }
+      }
+    }
   }
 
   post {

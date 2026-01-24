@@ -18,7 +18,7 @@ pipeline {
     stage('Checkout') {
       steps {
         checkout scmGit(
-          branches: [[name: '*/dev']],
+          branches: [[name: '*/main']],
           extensions: [],
           userRemoteConfigs: [
             [url: 'https://github.com/Rajat-Rulaniya/devsecops-end-to-end.git']
